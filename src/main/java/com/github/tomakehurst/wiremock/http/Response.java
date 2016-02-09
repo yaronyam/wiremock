@@ -15,6 +15,7 @@
  */
 package com.github.tomakehurst.wiremock.http;
 
+import com.sun.deploy.net.HttpRequest;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 
@@ -49,7 +50,7 @@ public class Response {
 	public Response(int status, byte[] body, HttpHeaders headers, boolean configured, Fault fault, boolean fromProxy) {
 		this.status = status;
         this.body = body;
-        this.headers = headers;
+        this.headers = addContentLength(headers,body==null?0:body.length);
         this.configured = configured;
         this.fault = fault;
         this.fromProxy = fromProxy;
@@ -57,13 +58,20 @@ public class Response {
 
     public Response(int status, String body, HttpHeaders headers, boolean configured, Fault fault, boolean fromProxy) {
         this.status = status;
-        this.headers = headers;
+        this.headers = addContentLength(headers, body==null?0:body.length());
         this.body = body == null ? null : body.getBytes(encodingFromContentTypeHeaderOrUtf8());
         this.configured = configured;
         this.fault = fault;
         this.fromProxy = fromProxy;
     }
 
+    private HttpHeaders addContentLength(HttpHeaders headers, int bodyLength)
+    {
+        if(!headers.getHeader(HttpRequest.CONTENT_LENGTH).isPresent()){
+            return headers.plus(HttpHeader.httpHeader(CaseInsensitiveKey.from(HttpRequest.CONTENT_LENGTH), String.valueOf(bodyLength)));
+        }
+        return headers;
+    }
 	public int getStatus() {
 		return status;
 	}
